@@ -22,10 +22,8 @@ Or install it yourself as:
 
 In order to parse a fixed width file, you need to define the fields (and their positions) as well as the filepath, and then pass those to a block that will yield the data for each row.
 
-e.g.
-
 ```ruby
-filepath = 'path/to/file'
+filepath = 'path/to/file.txt'
 fields = [
   { name: 'first_name', position: 0..10 },
   { name: 'middle_initial', position: 11 },
