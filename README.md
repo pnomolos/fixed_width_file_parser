@@ -1,4 +1,5 @@
 # FixedWidthFileParser
+[![Build Status](https://travis-ci.org/elevatorup/fixed_width_file_parser.svg?branch=master)](https://travis-ci.org/elevatorup/fixed_width_file_parser)
 
 FixedWidthFileParser is used to parse fixed width files. Crazy right?
 
