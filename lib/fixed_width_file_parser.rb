@@ -49,6 +49,8 @@ module FixedWidthFileParser
 
     while !file.eof?
       line = file.readline
+      # If the current line is blank, skip to the next line
+      next if line.blank?
 
       line_fields = {}
       fields.each do |field|
