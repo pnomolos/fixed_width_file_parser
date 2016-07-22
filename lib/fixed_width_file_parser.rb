@@ -55,7 +55,7 @@ module FixedWidthFileParser
 
       line_fields = {}
       fields.each do |field|
-        line_fields[field[:name].to_sym] = line[ field[:position] ].strip
+        line_fields[field[:name].to_sym] = line[ field[:position] ].try(:strip)
       end
 
       yield(line_fields)
