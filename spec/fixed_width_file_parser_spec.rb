@@ -73,5 +73,32 @@ describe FixedWidthFileParser do
         FixedWidthFileParser.parse(filepath, fields, &b)
       }.to yield_successive_args(line_1_data, line_2_data)
     end
+
+    context 'a file with invalid UTF8 characters' do
+      before do
+        # Set readline to return an invalid UTF8 charater in order to test our handling of that
+        allow_any_instance_of(File).to receive(:readline).and_return("\255")
+        # Make sure eof? returns true after first attempt in order to prevent an infinite loop
+        allow_any_instance_of(File).to receive(:eof?).and_return(false, true)
+      end
+
+      context 'with option force_utf8_encoding set to true (default)' do
+        it 'does not raise any errors' do
+          expect{
+            FixedWidthFileParser.parse(filepath, fields, { force_utf8_encoding: true }) do
+            end
+          }.not_to raise_error
+        end
+      end
+
+      context 'with option force_utf8_encoding set to false' do
+        it 'raises an error' do
+          expect{
+            FixedWidthFileParser.parse(filepath, fields, { force_utf8_encoding: false }) do
+            end
+          }.to raise_error(ArgumentError, 'invalid byte sequence in UTF-8')
+        end
+      end
+    end
   end
 end

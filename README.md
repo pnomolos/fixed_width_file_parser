@@ -31,13 +31,23 @@ fields = [
   { name: 'middle_initial', position: 11 },
   { name: 'last_name', position: 12..25 }
 ]
+options = {}
 
-FixedWidthFileParser.parse(filepath, fields) do |row|
+FixedWidthFileParser.parse(filepath, fields, options) do |row|
   puts row[:first_name]
   puts row[:middle_initial]
   puts row[:last_name]
 end
 ```
+
+### Tips
+If you need to parse a fixed width file that has the last field set as a variable width field, you can set the position similar to `position: 20..-1`. Setting the end of the range as `-1` will read to the end of that line.
+
+## Options
+|Name|Default Value|Description|
+|---|---|---|
+|force_utf8_encoding|true|Force UTF-8 encoding on lines being parsed. This alleviates `invalid byte sequence in UTF-8` errors thrown when trying to split a string with invalid UTF characters. For more information, view this [article](https://robots.thoughtbot.com/fight-back-utf-8-invalid-byte-sequences).|
+
 
 ## Development
 

@@ -19,7 +19,10 @@ module FixedWidthFileParser
     #   puts row
     # end
 
-  def self.parse(filepath, fields)
+  def self.parse(filepath, fields, options = {})
+    # Set options, or use default
+    force_utf8_encoding = options.fetch(:force_utf8_encoding, true)
+
     # Verify `filepath` is a String
     unless filepath.is_a?(String)
       raise '`filepath` must be a String'
@@ -52,6 +55,13 @@ module FixedWidthFileParser
       # If the current line is blank, skip to the next line
       # chomp to remove "\n" and "\r\n"
       next if line.chomp.empty?
+
+      # Force UTF8 encoding if force_utf8_encoding is true (defaults to true)
+      if force_utf8_encoding
+        # Handle UTF Invalid Byte Sequence Errors
+        # e.g. https://robots.thoughtbot.com/fight-back-utf-8-invalid-byte-sequences
+        line = line.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+      end
 
       line_fields = {}
       fields.each do |field|
