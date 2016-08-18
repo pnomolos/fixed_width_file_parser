@@ -48,6 +48,8 @@ module FixedWidthFileParser
       raise "Each field's `position` must be a Range or an Integer"
     end
 
+    GC.start
+
     file = File.open(filepath)
 
     while !file.eof?
@@ -70,6 +72,8 @@ module FixedWidthFileParser
 
       yield(line_fields)
     end
+
+    GC.start
 
     file.close
   end
