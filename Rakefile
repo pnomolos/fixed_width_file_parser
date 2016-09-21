@@ -1,4 +1,5 @@
-require "bundler/gem_tasks"
+# frozen_string_literal: true
+require 'bundler/gem_tasks'
 
 Dir.glob('lib/tasks/**/*.rake').each(&method(:import))
 
