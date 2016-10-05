@@ -14,11 +14,15 @@ gem 'fixed_width_file_parser'
 
 And then execute:
 
-    $ bundle
+```
+bundle
+```
 
 Or install it yourself as:
 
-    $ gem install fixed_width_file_parser
+```
+gem install fixed_width_file_parser
+```
 
 ## Usage
 
@@ -31,9 +35,8 @@ fields = [
   { name: 'middle_initial', position: 11 },
   { name: 'last_name', position: 12..25 }
 ]
-options = {}
 
-FixedWidthFileParser.parse(filepath, fields, options) do |row|
+FixedWidthFileParser.parse(filepath, fields) do |row|
   puts row[:first_name]
   puts row[:middle_initial]
   puts row[:last_name]
@@ -41,7 +44,16 @@ end
 ```
 
 ### Tips
-If you need to parse a fixed width file that has the last field set as a variable width field, you can set the position similar to `position: 20..-1`. Setting the end of the range as `-1` will read to the end of that line.
+If you need to parse a fixed width file that has the last field set as a variable width field, you can set the position similar to `position: 12..-1`. Setting the end of the range as `-1` will read to the end of that line.
+
+```ruby
+filepath = 'path/to/file.txt'
+fields = [
+  { name: 'first_name', position: 0..10 },
+  { name: 'middle_initial', position: 11 },
+  { name: 'last_name', position: 12..-1 }
+]
+```
 
 ## Options
 |Name|Default Value|Description|
