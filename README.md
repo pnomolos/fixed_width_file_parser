@@ -22,26 +22,38 @@ Or install it yourself as:
 
 ```
 gem install fixed_width_file_parser
-
 ```
 
 ## Usage
 
-In order to parse a fixed width file, you need to define the fields (and their positions) as well as the filepath, and then pass those to a block that will yield the data for each row.
+In order to parse a fixed width file, you need to define the fields and their positions.
+Call parse with a filepath or an opened IO object, and pass those to a block that will yield the data for each row.
 
 ```ruby
-filepath = 'path/to/file.txt'
 fields = [
   { name: 'first_name', position: 0..10 },
   { name: 'middle_initial', position: 11 },
   { name: 'last_name', position: 12..25 }
 ]
 
+filepath = 'path/to/file.txt'
+
 FixedWidthFileParser.parse(filepath, fields) do |row|
   puts row[:first_name]
   puts row[:middle_initial]
   puts row[:last_name]
 end
+
+# or, from an input stream:
+
+file = StringIO.new(sftp.file.open(filename).read, 'rb')
+
+FixedWidthFileParser.parse(file, fields) do |row|
+  puts row[:first_name]
+  puts row[:middle_initial]
+  puts row[:last_name]
+end
+
 ```
 
 ### Tips
@@ -60,6 +72,14 @@ fields = [
 |Name|Default Value|Description|
 |---|---|---|
 |force_utf8_encoding|true|Force UTF-8 encoding on lines being parsed. This alleviates `invalid byte sequence in UTF-8` errors thrown when trying to split a string with invalid UTF characters. For more information, view this [article](https://robots.thoughtbot.com/fight-back-utf-8-invalid-byte-sequences).|
+
+e.g.
+
+```
+FixedWidthFileParser.parse(filepath, fields, force_utf8_encoding: false) do |row| 
+  puts row 
+end
+```
 
 
 ## Development
