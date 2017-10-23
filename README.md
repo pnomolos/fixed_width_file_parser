@@ -22,6 +22,7 @@ Or install it yourself as:
 
 ```
 gem install fixed_width_file_parser
+
 ```
 
 ## Usage
