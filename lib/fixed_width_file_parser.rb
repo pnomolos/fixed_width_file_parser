@@ -24,8 +24,8 @@ module FixedWidthFileParser
     # Set options, or use default
     force_utf8_encoding = options.fetch(:force_utf8_encoding, true)
 
-    # Verify `filepath` is a String
-    raise '`filepath` must be a String' unless filepath.is_a?(String)
+    # Verify `filepath` is a String or IO object
+    raise '`filepath` must be a String' unless filepath.is_a?(String) || filepath.respond_to?(:readline)
 
     # Verify `fields` is an array
     if fields.is_a?(Array)
@@ -47,7 +47,11 @@ module FixedWidthFileParser
 
     GC.start
 
-    file = File.open(filepath)
+    if filepath.respond_to? :readline
+      file = filepath
+    else
+      file = File.open(filepath)
+    end
 
     until file.eof?
       line = file.readline

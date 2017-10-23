@@ -19,8 +19,10 @@ describe FixedWidthFileParser do
         { name: 'zip',            position: 130..145 }
       ]
     end
+    let (:line_1_data) { { first_name: 'Jim', middle_initial: 'B', last_name: 'Smith', address: '123 W. Main St.', city: 'Comstock Park', state: 'MI', zip: '49321' } }
+    let (:line_2_data) { { first_name: 'John', middle_initial: 'S', last_name: 'Doe', address: '345 E. Second St.', city: 'Grand Rapids', state: 'MI', zip: '49555' } }
 
-    it 'raises an error if `filepath` is not a String' do
+    it 'raises an error if `filepath` is not a String or IO object' do
       fake_filepath = 123
       expect do
         FixedWidthFileParser.parse(fake_filepath, fields) do
@@ -62,17 +64,34 @@ describe FixedWidthFileParser do
       end.to raise_error(RuntimeError, "Each field's `position` must be a Range or an Integer")
     end
 
-    it 'yields a hash of the `fields` passed in for each line of the file containing the correct data' do
-      expect do |b|
-        FixedWidthFileParser.parse(filepath, fields, &b)
-      end.to yield_control.exactly(2).times
+    context 'with a filepath' do
+      it 'yields a hash of the `fields` for each line' do
+        expect do |b|
+          FixedWidthFileParser.parse(filepath, fields, &b)
+        end.to yield_control.exactly(2).times
+      end
 
-      line_1_data = { first_name: 'Jim', middle_initial: 'B', last_name: 'Smith', address: '123 W. Main St.', city: 'Comstock Park', state: 'MI', zip: '49321' }
-      line_2_data = { first_name: 'John', middle_initial: 'S', last_name: 'Doe', address: '345 E. Second St.', city: 'Grand Rapids', state: 'MI', zip: '49555' }
+      it 'yields a hash of the `fields` with the the correct data' do
+        expect do |b|
+          FixedWidthFileParser.parse(filepath, fields, &b)
+        end.to yield_successive_args(line_1_data, line_2_data)
+      end
+    end
 
-      expect do |b|
-        FixedWidthFileParser.parse(filepath, fields, &b)
-      end.to yield_successive_args(line_1_data, line_2_data)
+    context 'with an IO object' do
+      let (:file) { File.open(filepath) }
+
+      it 'yields a hash of the `fields` for each line' do
+        expect do |b|
+          FixedWidthFileParser.parse(file, fields, &b)
+        end.to yield_control.exactly(2).times
+      end
+
+      it 'yields a hash of the `fields` with the the correct data' do
+        expect do |b|
+          FixedWidthFileParser.parse(file, fields, &b)
+        end.to yield_successive_args(line_1_data, line_2_data)
+      end
     end
 
     context 'a file with invalid UTF8 characters' do
