@@ -25,7 +25,7 @@ module FixedWidthFileParser
     force_utf8_encoding = options.fetch(:force_utf8_encoding, true)
 
     # Verify `filepath` is a String or IO object
-    raise '`filepath` must be a String' unless filepath.is_a?(String) || filepath.respond_to? :readline
+    raise '`filepath` must be a String' unless filepath.is_a?(String) || filepath.respond_to?(:readline)
 
     # Verify `fields` is an array
     if fields.is_a?(Array)
