@@ -53,6 +53,12 @@ module FixedWidthFileParser
       file = File.open(filepath)
     end
 
+    if options[:skip_lines] > 0
+      options[:skip_lines].times do
+        file.readline unless file.eof?
+      end
+    end
+
     until file.eof?
       line = file.readline
       # If the current line is blank, skip to the next line

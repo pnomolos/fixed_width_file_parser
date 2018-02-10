@@ -94,6 +94,20 @@ describe FixedWidthFileParser do
       end
     end
 
+    context 'with :skip_lines set' do
+      it 'skips over the lines' do
+        expect do |b|
+          FixedWidthFileParser.parse(filepath, fields, skip_lines: 1, &b)
+        end.to yield_successive_args(line_2_data)
+      end
+
+      it "doesn't error if you skip more than the lines in the file" do
+        expect do |b|
+          FixedWidthFileParser.parse(filepath, fields, skip_lines: 3, &b)
+        end.to yield_control.exactly(0).times
+      end
+    end
+
     context 'a file with invalid UTF8 characters' do
       before do
         # Set readline to return an invalid UTF8 charater in order to test our handling of that
