@@ -27,7 +27,7 @@ describe FixedWidthFileParser do
       expect do
         FixedWidthFileParser.parse(fake_filepath, fields) do
         end
-      end.to raise_error(RuntimeError, '`filepath` must be a String')
+      end.to raise_error(RuntimeError, '`filepath` must be a String or IO')
     end
 
     it 'raises an error if `fields` is not an Array' do
@@ -64,6 +64,13 @@ describe FixedWidthFileParser do
       end.to raise_error(RuntimeError, "Each field's `position` must be a Range or an Integer")
     end
 
+    it 'can do lazy stuff' do
+      fwfp = FixedWidthFileParser.new(filepath, fields)
+      res = fwfp.each.map(&:values)
+      expect(res).to be_instance_of(Enumerator::Lazy)
+      expect(res.force).to eq([line_1_data.values, line_2_data.values])
+    end
+
     context 'with a filepath' do
       it 'yields a hash of the `fields` for each line' do
         expect do |b|
@@ -97,7 +104,7 @@ describe FixedWidthFileParser do
     context 'a file with invalid UTF8 characters' do
       before do
         # Set readline to return an invalid UTF8 charater in order to test our handling of that
-        allow_any_instance_of(File).to receive(:readline).and_return("\255")
+        allow_any_instance_of(File).to receive(:each_line).and_return(["\255"])
         # Make sure eof? returns true after first attempt in order to prevent an infinite loop
         allow_any_instance_of(File).to receive(:eof?).and_return(false, true)
       end

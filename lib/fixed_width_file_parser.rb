@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'fixed_width_file_parser/version'
 
-module FixedWidthFileParser
+class FixedWidthFileParser
   # Parse a fixed width file, yielding the proper data for each line based on the fields passed in
   #
   # @param filepath [String] The path to the file to be parsed.
@@ -20,12 +20,36 @@ module FixedWidthFileParser
   #   puts row
   # end
 
-  def self.parse(filepath, fields, options = {})
-    # Set options, or use default
-    force_utf8_encoding = options.fetch(:force_utf8_encoding, true)
+  def self.parse(filepath, fields, options = {}, &block)
+    GC.start
+    new(filepath, fields, options).each(&block)
+    GC.start
+  end
 
+  def initialize(filepath, fields, options = {})
+    @options = {
+      force_utf8_encoding: true
+    }.merge(options)
+
+    check_errors(filepath, fields)
+    @filepath = filepath
+    @fields = fields
+
+    @io = filepath.respond_to?(:readline) ? filepath : File.open(filepath)
+    @input_is_io = @io == filepath
+    initialize_enumerator
+  end
+
+  def initialize_enumerator
+    @seek_position = @io.pos
+    @enumerator = Enumerator::Lazy.new(@io.each_line) do |yielder, line|
+      yielder.yield(read_line(line))
+    end
+  end
+
+  def check_errors(filepath, fields)
     # Verify `filepath` is a String or IO object
-    raise '`filepath` must be a String' unless filepath.is_a?(String) || filepath.respond_to?(:readline)
+    raise '`filepath` must be a String or IO' unless filepath.is_a?(String) || filepath.respond_to?(:readline)
 
     # Verify `fields` is an array
     if fields.is_a?(Array)
@@ -44,36 +68,46 @@ module FixedWidthFileParser
     unless fields.all? { |item| item[:position].is_a?(Range) || item[:position].is_a?(Integer) }
       raise "Each field's `position` must be a Range or an Integer"
     end
-
-    GC.start
-
-    if filepath.respond_to? :readline
-      file = filepath
-    else
-      file = File.open(filepath)
-    end
-
-    until file.eof?
-      line = file.readline
-      # If the current line is blank, skip to the next line
-      # chomp to remove "\n" and "\r\n"
-      next if line.chomp.empty?
-
-      # Force UTF8 encoding if force_utf8_encoding is true (defaults to true)
-      # Handle UTF Invalid Byte Sequence Errors
-      # e.g. https://robots.thoughtbot.com/fight-back-utf-8-invalid-byte-sequences
-      line = line.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') if force_utf8_encoding
-
-      line_fields = {}
-      fields.each do |field|
-        line_fields[field[:name].to_sym] = line[field[:position]].nil? ? nil : line[field[:position]].strip
-      end
-
-      yield(line_fields)
-    end
-
-    GC.start
-
-    file.close
   end
+
+  def read
+
+  rescue
+    @io.close
+    raise
+  end
+
+  def read_line(line)
+    line = line.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') if @options[:force_utf8_encoding]
+    @fields.each_with_object({}) do |field, line_fields|
+      line_fields[field[:name].to_sym] = line[field[:position]].nil? ? nil : line[field[:position]].strip
+    end
+  end
+
+  # Lazy stuff
+  def each(&block)
+    return @enumerator unless block_given?
+    begin
+      r = @enumerator.each(&block)
+    ensure
+      close_io
+    end
+    r
+  end
+
+  def rewind
+    @io.seek(@seek_position)
+    @enumerator.rewind
+  end
+
+  def to_a
+    r = @enumerator.to_a
+    close_io
+    r
+  end
+
+  def close_io
+    @io.close unless @lazy_csv.instance_variable_get(:@input_is_io)
+  end
+  alias force to_a
 end
