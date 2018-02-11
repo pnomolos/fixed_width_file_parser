@@ -41,6 +41,11 @@ class FixedWidthFileParser
   end
 
   def initialize_enumerator
+    if @options[:skip_lines].to_i > 0
+      @options[:skip_lines].times do
+        @io.readline unless @io.eof?
+      end
+    end
     @seek_position = @io.pos
     @enumerator = Enumerator::Lazy.new(@io.each_line) do |yielder, line|
       yielder.yield(read_line(line))
