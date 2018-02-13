@@ -25,12 +25,19 @@ class FixedWidthFileParser
 
   def initialize(filepath, fields, options = {})
     @options = {
-      force_utf8_encoding: true
+      force_utf8_encoding: true,
+      symbolize_keys: true
     }.merge(options)
 
     check_errors(filepath, fields)
     @filepath = filepath
     @fields = fields
+    @unpack_string = fields.each_with_object([]) do |field, memo|
+      first, last = field[:position].is_a?(Range) || field[:position].is_a?(Array) ? [field[:position].first, field[:position].last] : [field[:position], field[:position]]
+      memo << "@" + first.to_s + "A" + (last - first + 1).to_s
+    end.join('')
+
+    @field_keys = fields.map { |f| f[:name] }.map { |k| @options[:symbolize_keys] ? k.to_sym : k }
 
     @io = filepath.respond_to?(:readline) ? filepath : File.open(filepath)
     @input_is_io = @io == filepath
@@ -45,7 +52,9 @@ class FixedWidthFileParser
     end
     @seek_position = @io.pos
     @enumerator = Enumerator::Lazy.new(@io.each_line) do |yielder, line|
-      yielder.yield(read_line(line))
+      l = read_line(line)
+      next unless l
+      yielder.yield(l)
     end
   end
 
@@ -74,8 +83,15 @@ class FixedWidthFileParser
 
   def read_line(line)
     line = line.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') if @options[:force_utf8_encoding]
-    @fields.each_with_object({}) do |field, line_fields|
-      line_fields[field[:name].to_sym] = line[field[:position]].nil? ? nil : line[field[:position]].strip
+    return nil if line.empty?
+    begin
+      @field_keys.zip(line.unpack(@unpack_string).map(&:strip)).to_h
+    rescue ArgumentError => e
+      if e.message =~ /@ outside of string/
+        raise ArgumentError, "Invalid line"
+      else
+        raise
+      end
     end
   end
 

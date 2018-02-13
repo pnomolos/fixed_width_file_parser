@@ -137,7 +137,7 @@ describe FixedWidthFileParser do
           expect do
             FixedWidthFileParser.parse(filepath, fields, force_utf8_encoding: false) do
             end
-          end.to raise_error(ArgumentError, 'invalid byte sequence in UTF-8')
+          end.to raise_error(ArgumentError, 'Invalid line')
         end
       end
     end
