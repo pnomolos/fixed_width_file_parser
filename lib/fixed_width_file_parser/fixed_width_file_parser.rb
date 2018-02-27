@@ -32,10 +32,19 @@ class FixedWidthFileParser
     check_errors(filepath, fields)
     @filepath = filepath
     @fields = fields
-    @unpack_string = fields.each_with_object([]) do |field, memo|
+    offset = 0
+    @scan_regex = fields.each_with_object([]) do |field, memo|
       first, last = field[:position].is_a?(Range) || field[:position].is_a?(Array) ? [field[:position].first, field[:position].last] : [field[:position], field[:position]]
-      memo << "@" + first.to_s + "A" + (last - first + 1).to_s
+      memo << ".{#{first - offset}}" if first - offset > 0
+      # For the last item we allow it to not reach the full length
+      memo << if field == fields.last
+                "(.{1,#{last - first + 1}})"
+              else
+                "(.{#{last - first + 1}})"
+              end
+      offset = last + 1
     end.join('')
+    @scan_regex = Regexp.new(@scan_regex)
 
     @field_keys = fields.map { |f| f[:name] }.map { |k| @options[:symbolize_keys] ? k.to_sym : k }
 
@@ -85,7 +94,7 @@ class FixedWidthFileParser
     line = line.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') if @options[:force_utf8_encoding]
     return nil if line.empty?
     begin
-      @field_keys.zip(line.unpack(@unpack_string).map(&:strip)).to_h
+      @field_keys.zip(line.scan(@scan_regex).flatten.map(&:strip)).to_h
     rescue ArgumentError => e
       if e.message =~ /@ outside of string/
         raise ArgumentError, "Invalid line"
